@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Next.js
+.next/
+frontend/.next/
+out/
+
+# Build outputs
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+*.egg-info/
+.eggs/
+venv/
+backend/venv/
+*.sqlite3
+*.db
+
+# Logs
+*.log
+logs/
+backend/logs/
+
+# Coverage
+coverage/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+backend/cache/
+backend/chroma_db/
+backend/audio/
+backend/documents/
+*.cache
+
+# Misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

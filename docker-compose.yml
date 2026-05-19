@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: academic-ai-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./documents:/app/documents
+      - ./chroma_db:/app/chroma_db
+      - ./audio:/app/audio
+      - ./cache:/app/cache
+      - ./logs:/app/logs
+      - ./models:/app/models
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - DEBUG=false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: academic-ai-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+  documents_data:

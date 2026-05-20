@@ -100,7 +100,7 @@ export default function UploadPage() {
 
           const res = await axios.post("/api/documents/upload", formData, {
             headers: { "Content-Type": "multipart/form-data" },
-            onUploadProgress: (e) => {
+            onUploadProgress: (e: any) => {
               const pct = Math.round((e.loaded * 60) / (e.total || 1));
               setUploading((prev) =>
                 prev.map((u) =>

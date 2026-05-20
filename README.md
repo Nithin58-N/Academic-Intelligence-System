@@ -85,6 +85,7 @@ python main.py
 
 Backend runs at: `http://localhost:8000`
 API docs at: `http://localhost:8000/docs`
+deployment link : https://academic-intelligence-system.onrender.com/
 
 ### 3. Frontend Setup
 

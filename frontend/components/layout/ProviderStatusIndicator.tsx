@@ -24,7 +24,7 @@ export default function ProviderStatusIndicator() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const response = await axios.get<HealthResponse>("/api/health");
+        const response = await axios.get("/api/health");
         setProviderStatus(response.data.provider);
       } catch (error) {
         setProviderStatus({

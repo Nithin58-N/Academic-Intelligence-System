@@ -28,8 +28,22 @@ class Settings(BaseSettings):
         "http://localhost:3001",
     ]
 
-    # Ollama
+    # AI Provider Configuration
+    AI_PROVIDER: str = "groq"  # "groq" or "ollama"
+    REQUEST_TIMEOUT: int = 30  # seconds for API requests
+
+    # Groq Configuration (primary provider — ultra-fast cloud inference)
+    GROQ_API_KEY: str = ""  # Required when AI_PROVIDER=groq — get at https://console.groq.com/keys
+    GROQ_MODEL: str = "llama-3.1-8b-instant"  # Fast default; alternatives: llama3-70b-8192, gemma2-9b-it, mixtral-8x7b-32768
+
+    # Ollama Configuration (local embeddings + optional offline fallback)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MAIN_MODEL: str = "llama3:8b"
+    OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"  # Always used for embeddings regardless of AI_PROVIDER
+    OLLAMA_FAST_MODEL: str = "phi3"
+    OLLAMA_CODE_MODEL: str = "deepseek-coder"
+
+    # Legacy names (kept for backward compatibility)
     MAIN_MODEL: str = "llama3:8b"
     EMBEDDING_MODEL: str = "nomic-embed-text"
     FAST_MODEL: str = "phi3"
@@ -68,6 +82,22 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._validate_config()
+    
+    def _validate_config(self):
+        """Validate configuration on startup."""
+        if self.AI_PROVIDER.lower() == "groq" and not self.GROQ_API_KEY:
+            import warnings
+            warnings.warn(
+                "AI_PROVIDER is set to 'groq' but GROQ_API_KEY is not configured. "
+                "Set GROQ_API_KEY in .env file or as environment variable. "
+                "Falling back to Ollama.",
+                UserWarning,
+            )
+            self.AI_PROVIDER = "ollama"
 
 
 settings = Settings()

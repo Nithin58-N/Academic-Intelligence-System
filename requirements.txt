@@ -22,6 +22,9 @@ langchain-core>=0.3.0
 langchain-ollama>=0.2.0
 langchain-chroma>=0.1.4
 
+# ── AI Provider SDKs ────────────────────────────────────────────────────────
+openai>=1.40.0  # Used for Groq API (OpenAI-compatible endpoint)
+
 # ── Vector DB ────────────────────────────────────────────────────────────────
 chromadb>=0.5.3
 

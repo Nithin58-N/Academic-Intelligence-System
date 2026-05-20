@@ -26,12 +26,22 @@ from api.routes import (
 from utils.config import settings
 from utils.database import init_db
 from utils.logger import setup_logger, logger
+from ai_providers import get_provider
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logger()
     logger.info("Starting Academic AI System...")
+
+    # Initialize AI Provider
+    try:
+        provider = get_provider()
+        logger.info(f"AI Provider initialized: {provider.provider_name.upper()}")
+        logger.info(f"Model: {provider.model}")
+    except Exception as e:
+        logger.error(f"Failed to initialize AI provider: {e}")
+        raise
 
     # Init SQLite DB (sync)
     init_db()
@@ -98,7 +108,57 @@ def root():
 
 @app.get("/health", tags=["Health"])
 def health_check():
-    return {"status": "healthy", "ollama": settings.OLLAMA_BASE_URL}
+    """
+    Detailed health check — shows Groq status, Ollama embedding status,
+    active provider, and model availability.
+    """
+    import requests as _requests
+
+    result: dict = {
+        "status": "healthy",
+        "system": "online",
+        "provider": {},
+        "ollama_embeddings": {},
+    }
+
+    # ── AI provider (Groq or Ollama) ──────────────────────────────────────────
+    try:
+        provider = get_provider()
+        result["provider"] = provider.check_health()
+        result["provider"]["active"] = True
+    except Exception as e:
+        logger.error(f"Health check — provider error: {e}")
+        result["provider"] = {"status": "offline", "error": str(e), "active": False}
+        result["status"] = "degraded"
+
+    # ── Ollama embeddings (always needed for RAG) ─────────────────────────────
+    try:
+        resp = _requests.get(
+            f"{settings.OLLAMA_BASE_URL}/api/tags", timeout=3
+        )
+        if resp.status_code == 200:
+            models = [m["name"] for m in resp.json().get("models", [])]
+            embed_model = settings.OLLAMA_EMBEDDING_MODEL
+            result["ollama_embeddings"] = {
+                "status": "online",
+                "embedding_model": embed_model,
+                "model_available": any(embed_model in m for m in models),
+                "url": settings.OLLAMA_BASE_URL,
+            }
+        else:
+            result["ollama_embeddings"] = {
+                "status": "offline",
+                "error": f"HTTP {resp.status_code}",
+                "url": settings.OLLAMA_BASE_URL,
+            }
+    except Exception as e:
+        result["ollama_embeddings"] = {
+            "status": "offline",
+            "error": str(e),
+            "url": settings.OLLAMA_BASE_URL,
+        }
+
+    return result
 
 
 if __name__ == "__main__":

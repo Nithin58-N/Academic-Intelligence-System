@@ -26,6 +26,22 @@ interface Stats {
   by_type: Record<string, number>;
 }
 
+interface HealthStatus {
+  status: string;
+  provider?: {
+    provider?: string;
+    status?: string;
+    model?: string;
+    error?: string;
+  };
+  ollama_embeddings?: {
+    status?: string;
+    embedding_model?: string;
+    model_available?: boolean;
+    error?: string;
+  };
+}
+
 const quickActions = [
   {
     href: "/chat",
@@ -75,6 +91,7 @@ const features = [
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
 
   useEffect(() => {
     axios
@@ -82,6 +99,12 @@ export default function DashboardPage() {
       .then((res: { data: Stats }) => setStats(res.data))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
+
+    // Fetch live provider health
+    axios
+      .get("/health")
+      .then((res: { data: HealthStatus }) => setHealth(res.data))
+      .catch(() => setHealth(null));
   }, []);
 
   const statCards = [
@@ -264,8 +287,68 @@ export default function DashboardPage() {
               System Status
             </h2>
             <div className="space-y-3">
+              {/* Groq / AI Provider — dynamic */}
+              {(() => {
+                const p = health?.provider;
+                const isOnline = p?.status === "online";
+                const label = p
+                  ? `${(p.provider ?? "AI").charAt(0).toUpperCase() + (p.provider ?? "AI").slice(1)} (${p.model ?? "—"})`
+                  : "AI Provider";
+                return (
+                  <div
+                    className="flex items-center justify-between p-3 rounded-xl"
+                    style={{ background: "rgba(255,255,255,0.04)" }}
+                  >
+                    <span className="text-sm text-slate-300">{label}</span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          health === null
+                            ? "bg-slate-400"
+                            : isOnline
+                            ? "bg-emerald-400 animate-pulse"
+                            : "bg-red-400"
+                        }`}
+                      />
+                      <span className="text-xs text-slate-400 capitalize">
+                        {health === null ? "checking…" : isOnline ? "online" : "offline"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Ollama Embeddings — dynamic */}
+              {(() => {
+                const emb = health?.ollama_embeddings;
+                const isOnline = emb?.status === "online";
+                const label = `Ollama Embeddings (${emb?.embedding_model ?? "nomic-embed-text"})`;
+                return (
+                  <div
+                    className="flex items-center justify-between p-3 rounded-xl"
+                    style={{ background: "rgba(255,255,255,0.04)" }}
+                  >
+                    <span className="text-sm text-slate-300">{label}</span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          health === null
+                            ? "bg-slate-400"
+                            : isOnline
+                            ? "bg-emerald-400 animate-pulse"
+                            : "bg-yellow-400"
+                        }`}
+                      />
+                      <span className="text-xs text-slate-400 capitalize">
+                        {health === null ? "checking…" : isOnline ? "active" : "offline"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Static services */}
               {[
-                { label: "Ollama LLM (llama3:8b)", status: "active", color: "bg-emerald-400" },
                 { label: "ChromaDB Vector Store", status: "active", color: "bg-emerald-400" },
                 { label: "Whisper STT", status: "ready", color: "bg-yellow-400" },
                 { label: "Piper TTS", status: "ready", color: "bg-yellow-400" },

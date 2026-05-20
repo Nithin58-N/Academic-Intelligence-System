@@ -23,6 +23,7 @@ Pillow==10.4.0
 
 # Embeddings & AI
 ollama==0.4.8
+openai>=1.40.0
 sentence-transformers==3.4.1
 transformers==4.51.3
 torch==2.6.0

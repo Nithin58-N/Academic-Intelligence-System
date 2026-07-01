@@ -6,9 +6,18 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/axios";
 import toast from "react-hot-toast";
+import type { User } from "@/types/auth";
 import {
-  User, Mail, Calendar, MessageSquare,
-  FileText, Loader2, Edit2, Check, X,
+  // Note: lucide's User icon is aliased to avoid clash with the User type
+  User as UserIcon,
+  Mail,
+  Calendar,
+  MessageSquare,
+  FileText,
+  Loader2,
+  Edit2,
+  Check,
+  X,
 } from "lucide-react";
 
 interface Stats {
@@ -21,24 +30,29 @@ export default function ProfilePage() {
   const { user, updateUser } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [editing, setEditing] = useState(false);
-  const [fullName, setFullName] = useState(user?.full_name || "");
+  const [fullName, setFullName] = useState(user?.full_name ?? "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get("/api/auth/stats")
-      .then((r) => setStats(r.data))
-      .catch(() => {});
+    api
+      .get("/api/auth/stats")
+      .then((r: { data: Stats }) => {
+        setStats(r.data);
+      })
+      .catch(() => {
+        // stats are optional — silently ignore
+      });
   }, []);
 
-  const saveProfile = async () => {
+  const saveProfile = async (): Promise<void> => {
     if (!fullName.trim()) {
       toast.error("Name cannot be empty");
       return;
     }
     setSaving(true);
     try {
-      const { data } = await api.put("/api/auth/profile", { full_name: fullName });
-      updateUser(data);
+      const res = await api.put("/api/auth/profile", { full_name: fullName });
+      updateUser(res.data as User);
       toast.success("Profile updated");
       setEditing(false);
     } catch {
@@ -50,14 +64,20 @@ export default function ProfilePage() {
 
   const joinDate = stats?.member_since
     ? new Date(stats.member_since).toLocaleDateString("en-IN", {
-        year: "numeric", month: "long", day: "numeric",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       })
     : "—";
 
   return (
     <MainLayout>
       <div className="p-8 max-w-3xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <h1 className="text-3xl font-bold gradient-text mb-1">My Profile</h1>
           <p className="text-slate-400 text-sm">Manage your account details</p>
         </motion.div>
@@ -74,7 +94,7 @@ export default function ProfilePage() {
             className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 text-3xl font-bold text-white"
             style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
           >
-            {(user?.full_name || user?.username || "U")[0].toUpperCase()}
+            {(user?.full_name ?? user?.username ?? "U")[0].toUpperCase()}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -101,7 +121,10 @@ export default function ProfilePage() {
                     )}
                   </button>
                   <button
-                    onClick={() => { setEditing(false); setFullName(user?.full_name || ""); }}
+                    onClick={() => {
+                      setEditing(false);
+                      setFullName(user?.full_name ?? "");
+                    }}
                     className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition-colors"
                     aria-label="Cancel"
                   >
@@ -111,10 +134,13 @@ export default function ProfilePage() {
               ) : (
                 <>
                   <h2 className="text-xl font-bold text-white">
-                    {user?.full_name || user?.username || "User"}
+                    {user?.full_name ?? user?.username ?? "User"}
                   </h2>
                   <button
-                    onClick={() => { setEditing(true); setFullName(user?.full_name || ""); }}
+                    onClick={() => {
+                      setEditing(true);
+                      setFullName(user?.full_name ?? "");
+                    }}
                     className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
                     aria-label="Edit name"
                   >
@@ -134,11 +160,17 @@ export default function ProfilePage() {
           transition={{ delay: 0.2 }}
           className="glass-card p-6 mb-6"
         >
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">Account Details</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-4">
+            Account Details
+          </h3>
           <div className="space-y-3">
             {[
-              { icon: Mail, label: "Email", value: user?.email || "—" },
-              { icon: User, label: "Username", value: `@${user?.username || "—"}` },
+              { icon: Mail, label: "Email", value: user?.email ?? "—" },
+              {
+                icon: UserIcon,
+                label: "Username",
+                value: `@${user?.username ?? "—"}`,
+              },
               { icon: Calendar, label: "Member Since", value: joinDate },
             ].map((item) => {
               const Icon = item.icon;
@@ -169,13 +201,27 @@ export default function ProfilePage() {
           className="grid grid-cols-2 gap-4"
         >
           {[
-            { icon: MessageSquare, label: "Total Chats", value: stats?.total_chats ?? "—", color: "text-cyan-400", bg: "from-cyan-500/10 to-cyan-500/5" },
-            { icon: FileText, label: "Uploaded Files", value: stats?.total_documents ?? "—", color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-500/5" },
+            {
+              icon: MessageSquare,
+              label: "Total Chats",
+              value: stats?.total_chats ?? "—",
+              color: "text-cyan-400",
+              bg: "from-cyan-500/10 to-cyan-500/5",
+            },
+            {
+              icon: FileText,
+              label: "Uploaded Files",
+              value: stats?.total_documents ?? "—",
+              color: "text-emerald-400",
+              bg: "from-emerald-500/10 to-emerald-500/5",
+            },
           ].map((card) => {
             const Icon = card.icon;
             return (
               <div key={card.label} className="glass-card p-5">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.bg} flex items-center justify-center mb-3`}>
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.bg} flex items-center justify-center mb-3`}
+                >
                   <Icon className={`w-5 h-5 ${card.color}`} />
                 </div>
                 <p className="text-2xl font-bold text-white">{card.value}</p>

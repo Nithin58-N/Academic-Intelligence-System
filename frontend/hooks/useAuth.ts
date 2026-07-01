@@ -28,6 +28,15 @@ interface AuthResponse {
   user: User;
 }
 
+// Shape of an axios error response from our backend
+interface ApiError {
+  response?: {
+    data?: {
+      detail?: string;
+    };
+  };
+}
+
 export function useAuth() {
   const router = useRouter();
   const { user, token, isAuthenticated, isLoading, setAuth, clearAuth, updateUser } =
@@ -35,7 +44,8 @@ export function useAuth() {
 
   const login = async (payload: LoginPayload): Promise<boolean> => {
     try {
-      const { data } = await api.post<AuthResponse>("/api/auth/login", payload);
+      const res = await api.post("/api/auth/login", payload);
+      const data = res.data as AuthResponse;
       setAuth(data.user, data.access_token);
 
       // Persist token in cookie for middleware (edge runtime can't read localStorage)
@@ -45,8 +55,9 @@ export function useAuth() {
 
       toast.success(`Welcome back, ${data.user.full_name || data.user.username}!`);
       return true;
-    } catch (err: any) {
-      const msg = err.response?.data?.detail || "Login failed. Check your credentials.";
+    } catch (err: unknown) {
+      const apiErr = err as ApiError;
+      const msg = apiErr.response?.data?.detail ?? "Login failed. Check your credentials.";
       toast.error(msg);
       return false;
     }
@@ -54,7 +65,8 @@ export function useAuth() {
 
   const register = async (payload: RegisterPayload): Promise<boolean> => {
     try {
-      const { data } = await api.post<AuthResponse>("/api/auth/register", payload);
+      const res = await api.post("/api/auth/register", payload);
+      const data = res.data as AuthResponse;
       setAuth(data.user, data.access_token);
 
       document.cookie = `academic_ai_token=${encodeURIComponent(
@@ -63,14 +75,15 @@ export function useAuth() {
 
       toast.success("Account created! Welcome to Academic AI 🎓");
       return true;
-    } catch (err: any) {
-      const msg = err.response?.data?.detail || "Registration failed.";
+    } catch (err: unknown) {
+      const apiErr = err as ApiError;
+      const msg = apiErr.response?.data?.detail ?? "Registration failed.";
       toast.error(msg);
       return false;
     }
   };
 
-  const logout = () => {
+  const logout = (): void => {
     clearAuth();
     // Clear auth cookie
     document.cookie =
@@ -79,9 +92,10 @@ export function useAuth() {
     router.push("/login");
   };
 
-  const refreshUser = async () => {
+  const refreshUser = async (): Promise<void> => {
     try {
-      const { data } = await api.get<User>("/api/auth/me");
+      const res = await api.get("/api/auth/me");
+      const data = res.data as User;
       updateUser(data);
     } catch {
       // Token expired or invalid

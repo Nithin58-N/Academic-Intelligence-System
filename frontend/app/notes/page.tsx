@@ -13,7 +13,7 @@ import {
   GraduationCap,
   Calendar,
 } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -65,7 +65,7 @@ export default function NotesPage() {
 
   const loadSavedNotes = async () => {
     try {
-      const res = await axios.get("/api/notes/saved");
+      const res = await api.get("/api/notes/saved");
       setSavedNotes(res.data);
     } catch {}
   };
@@ -78,7 +78,7 @@ export default function NotesPage() {
     setLoading(true);
     setResult("");
     try {
-      const res = await axios.post("/api/notes/generate", {
+      const res = await api.post("/api/notes/generate", {
         topic,
         subject,
         note_type: noteType,
@@ -101,7 +101,7 @@ export default function NotesPage() {
     setLoading(true);
     setResult("");
     try {
-      const res = await axios.post("/api/notes/answer", {
+      const res = await api.post("/api/notes/answer", {
         question,
         answer_type: answerType,
         subject,
@@ -124,7 +124,7 @@ export default function NotesPage() {
     setLoading(true);
     setResult("");
     try {
-      const res = await axios.post("/api/notes/exam-plan", {
+      const res = await api.post("/api/notes/exam-plan", {
         subject,
         plan_type: planType,
         available_hours: parseInt(hours),
@@ -425,7 +425,7 @@ export default function NotesPage() {
                     <button
                       key={note.id}
                       onClick={async () => {
-                        const res = await axios.get(`/api/notes/saved/${note.id}`);
+                        const res = await api.get(`/api/notes/saved/${note.id}`);
                         setSelectedNote(res.data);
                       }}
                       className="w-full text-left p-3 rounded-xl transition-all hover:bg-white/5"

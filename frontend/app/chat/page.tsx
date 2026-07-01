@@ -17,7 +17,7 @@ import {
   Loader2,
   Volume2,
 } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { clsx } from "clsx";
 
@@ -60,7 +60,7 @@ export default function ChatPage() {
 
   const loadSessions = async () => {
     try {
-      const res = await axios.get("/api/chat/sessions");
+      const res = await api.get("/api/chat/sessions");
       setSessions(res.data);
     } catch {}
   };
@@ -81,7 +81,7 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/chat/message", {
+      const res = await api.post("/api/chat/message", {
         message: userMessage.content,
         session_id: sessionId,
         language,
@@ -135,7 +135,7 @@ export default function ChatPage() {
         if (language !== "en") formData.append("language", language);
 
         try {
-          const res = await axios.post("/api/speech/transcribe", formData);
+          const res = await api.post("/api/speech/transcribe", formData);
           if (res.data.text) {
             setInput(res.data.text);
             toast.success(`Transcribed: "${res.data.text.substring(0, 30)}..."`);
@@ -161,7 +161,7 @@ export default function ChatPage() {
 
   const speakMessage = async (text: string) => {
     try {
-      const res = await axios.post("/api/speech/synthesize", { text, language });
+      const res = await api.post("/api/speech/synthesize", { text, language });
       if (res.data.audio_url) {
         const audio = new Audio(res.data.audio_url);
         audio.play();
@@ -179,7 +179,7 @@ export default function ChatPage() {
 
   const loadSession = async (sid: string) => {
     try {
-      const res = await axios.get(`/api/chat/sessions/${sid}/messages`);
+      const res = await api.get(`/api/chat/sessions/${sid}/messages`);
       const msgs: Message[] = res.data.map((m: any) => ({
         id: m.id.toString(),
         role: m.role,

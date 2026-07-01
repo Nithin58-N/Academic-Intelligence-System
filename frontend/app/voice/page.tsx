@@ -12,7 +12,7 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { clsx } from "clsx";
 import ReactMarkdown from "react-markdown";
@@ -83,7 +83,7 @@ export default function VoicePage() {
       formData.append("language", language);
 
       // Transcribe
-      const transcribeRes = await axios.post("/api/speech/transcribe", formData);
+      const transcribeRes = await api.post("/api/speech/transcribe", formData);
       const text = transcribeRes.data.text;
 
       if (!text) {
@@ -104,7 +104,7 @@ export default function VoicePage() {
       setMessages((prev) => [...prev, userMsg]);
 
       // Get AI response
-      const chatRes = await axios.post("/api/chat/message", {
+      const chatRes = await api.post("/api/chat/message", {
         message: text,
         language,
       });
@@ -114,7 +114,7 @@ export default function VoicePage() {
       // Generate TTS
       let audioUrl: string | undefined;
       try {
-        const ttsRes = await axios.post("/api/speech/synthesize", {
+        const ttsRes = await api.post("/api/speech/synthesize", {
           text: aiText,
           language,
         });
@@ -174,7 +174,7 @@ export default function VoicePage() {
     setTranscript("");
 
     try {
-      const chatRes = await axios.post("/api/chat/message", {
+      const chatRes = await api.post("/api/chat/message", {
         message: userMsg.text,
         language,
       });
@@ -183,7 +183,7 @@ export default function VoicePage() {
       let audioUrl: string | undefined;
 
       try {
-        const ttsRes = await axios.post("/api/speech/synthesize", {
+        const ttsRes = await api.post("/api/speech/synthesize", {
           text: aiText,
           language,
         });

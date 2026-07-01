@@ -17,7 +17,7 @@ import {
   FlaskConical,
   Briefcase,
 } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { clsx } from "clsx";
 
@@ -65,7 +65,7 @@ export default function UploadPage() {
 
   const loadDocuments = async () => {
     try {
-      const res = await axios.get("/api/documents/");
+      const res = await api.get("/api/documents/");
       setDocuments(res.data);
     } catch {
       toast.error("Failed to load documents");
@@ -98,7 +98,7 @@ export default function UploadPage() {
             )
           );
 
-          const res = await axios.post("/api/documents/upload", formData, {
+          const res = await api.post("/api/documents/upload", formData, {
             headers: { "Content-Type": "multipart/form-data" },
             onUploadProgress: (e: any) => {
               const pct = Math.round((e.loaded * 60) / (e.total || 1));
@@ -155,7 +155,7 @@ export default function UploadPage() {
   const deleteDocument = async (id: number, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
     try {
-      await axios.delete(`/api/documents/${id}`);
+      await api.delete(`/api/documents/${id}`);
       toast.success("Document deleted");
       loadDocuments();
     } catch {

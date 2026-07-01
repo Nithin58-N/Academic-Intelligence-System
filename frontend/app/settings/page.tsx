@@ -15,7 +15,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { clsx } from "clsx";
 
@@ -34,7 +34,7 @@ export default function SettingsPage() {
     setTesting(true);
     setConnectionStatus("idle");
     try {
-      await axios.get("/health");
+      await api.get("/health");
       setConnectionStatus("ok");
       toast.success("Backend connection successful!");
     } catch {

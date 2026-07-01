@@ -14,7 +14,7 @@ import {
   Target,
   Lightbulb,
 } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import { clsx } from "clsx";
 import ReactMarkdown from "react-markdown";
@@ -61,7 +61,7 @@ export default function ExamIntelligencePage() {
   const analyzeQuestions = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("/api/pyq/analyze", { subject });
+      const res = await api.post("/api/pyq/analyze", { subject });
       setAnalysis(res.data);
       toast.success("PYQ analysis complete!");
     } catch (err: any) {
@@ -78,7 +78,7 @@ export default function ExamIntelligencePage() {
     }
     setPredLoading(true);
     try {
-      const res = await axios.post("/api/pyq/predict", { subject });
+      const res = await api.post("/api/pyq/predict", { subject });
       setPredictions(res.data.predictions?.[0]?.predictions || "No predictions available");
       toast.success("Predictions generated!");
     } catch (err: any) {

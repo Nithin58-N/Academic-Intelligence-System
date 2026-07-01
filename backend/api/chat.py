@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from rag.rag_engine import rag_engine
 from services.translation_service import translation_service
-from utils.database import ChatMessage, ChatSession, get_db
+from utils.auth import get_current_user
+from utils.database import ChatMessage, ChatSession, User, get_db
 
 router = APIRouter()
 
@@ -24,9 +25,14 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/message")
-async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat_message(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
     language = request.language or translation_service.detect_language(request.message)
     session_id = request.session_id or str(uuid.uuid4())
+    user_id = current_user.id if current_user else None
 
     # Load chat history
     history = []
@@ -62,7 +68,12 @@ async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
     session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
     if not session:
         title = request.message[:50] + ("..." if len(request.message) > 50 else "")
-        db.add(ChatSession(session_id=session_id, title=title, language=language))
+        db.add(ChatSession(
+            session_id=session_id,
+            title=title,
+            language=language,
+            user_id=user_id,
+        ))
 
     db.commit()
 
@@ -71,12 +82,16 @@ async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
         "answer": response["answer"],
         "sources": response.get("sources", []),
         "language": language,
-        "model": response.get("model", "llama3:8b"),
+        "model": response.get("model", "llama-3.1-8b-instant"),
     }
 
 
 @router.post("/stream")
-async def chat_stream(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat_stream(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
     language = request.language or translation_service.detect_language(request.message)
     session_id = request.session_id or str(uuid.uuid4())
 
@@ -104,13 +119,14 @@ async def chat_stream(request: ChatRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/sessions")
-def get_sessions(db: Session = Depends(get_db)):
-    sessions = (
-        db.query(ChatSession)
-        .order_by(ChatSession.id.desc())
-        .limit(20)
-        .all()
-    )
+def get_sessions(
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
+    query = db.query(ChatSession)
+    if current_user:
+        query = query.filter(ChatSession.user_id == current_user.id)
+    sessions = query.order_by(ChatSession.id.desc()).limit(50).all()
     return [
         {
             "session_id": s.session_id,
@@ -120,6 +136,21 @@ def get_sessions(db: Session = Depends(get_db)):
         }
         for s in sessions
     ]
+
+
+@router.put("/sessions/{session_id}/rename")
+def rename_session(
+    session_id: str,
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
+    session = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session.title = body.get("title", session.title)[:100]
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/sessions/{session_id}/messages")
@@ -144,7 +175,11 @@ def get_session_messages(session_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/sessions/{session_id}")
-def delete_session(session_id: str, db: Session = Depends(get_db)):
+def delete_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
     db.query(ChatMessage).filter(ChatMessage.session_id == session_id).delete()
     db.query(ChatSession).filter(ChatSession.session_id == session_id).delete()
     db.commit()

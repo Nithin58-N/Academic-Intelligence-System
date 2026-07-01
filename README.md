@@ -2,7 +2,7 @@
 
 > **Powered by Ollama · RAG · Whisper · ChromaDB · Hugging Face Prompt Templates**
 
-A fully offline, AI-powered academic assistant for engineering students supporting **Kannada**, **Hindi**, and **English**.
+ AI-powered academic assistant for engineering students supporting **Kannada**, **Hindi**, and **English**.
 
 ---
 
@@ -17,7 +17,6 @@ A fully offline, AI-powered academic assistant for engineering students supporti
 | 📝 **Notes Generator** | Short, detailed, revision, exam-oriented notes |
 | 🎯 **Exam Prep Engine** | 1-day, 1-week, full-semester study plans |
 | 🎤 **Voice Support** | Whisper STT + Piper TTS in all 3 languages |
-| 🔒 **100% Offline** | No internet required after setup |
 | 🚫 **Anti-Hallucination** | Only answers from uploaded documents |
 
 ---

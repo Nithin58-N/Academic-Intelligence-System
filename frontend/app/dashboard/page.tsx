@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/lib/axios";
 
 interface Stats {
   total_documents: number;
@@ -94,14 +94,14 @@ export default function DashboardPage() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
 
   useEffect(() => {
-    axios
+    api
       .get("/api/documents/stats/overview")
       .then((res: { data: Stats }) => setStats(res.data))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
 
     // Fetch live provider health
-    axios
+    api
       .get("/health")
       .then((res: { data: HealthStatus }) => setHealth(res.data))
       .catch(() => setHealth(null));

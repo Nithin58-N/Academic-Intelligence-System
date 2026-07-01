@@ -1,30 +1,33 @@
 /**
- * Axios instance with:
- *  - Automatic Bearer token injection from auth store
- *  - 401 → redirect to /login
+ * Centralised Axios instance.
+ *
+ * URL strategy
+ * ─────────────
+ * • In the browser all requests go to `/api/...` which Next.js rewrites to
+ *   the backend (see next.config.mjs).  This means NEXT_PUBLIC_API_URL is
+ *   only needed at *build time* by next.config.mjs — the browser never
+ *   calls Render directly, so there are no CORS preflight issues.
+ *
+ * • During SSR/SSG (server-side) Next.js also resolves the rewrites, so
+ *   relative URLs work there too.
+ *
+ * Features
+ * ─────────
+ * • Attaches JWT Bearer token from the Zustand-persisted store
+ * • Redirects to /login on 401
  */
 
 import axios from "axios";
 
+// Always use the relative /api path — Next.js rewrites handle the rest.
+// Never point directly at the Render URL from the browser.
 const api = axios.create({
   baseURL: "/",
-  timeout: 60000,
+  timeout: 60_000,
 });
 
 type TokenStore = { state?: { token?: string } };
 
-// Type the interceptor config via the axios request config interface.
-// We use ReturnType of create to keep everything inferred from the instance.
-type ApiInstance = typeof api;
-
-// Extract InternalAxiosRequestConfig via the instance's defaults type
-type ReqConfig = ApiInstance["defaults"] extends { headers: infer _H }
-  ? Awaited<ReturnType<ApiInstance["request"]>> extends { config: infer C }
-    ? C
-    : ApiInstance["defaults"]
-  : ApiInstance["defaults"];
-
-// Simpler: cast to a compatible shape we know axios sends
 interface AxiosRequestCfg {
   headers: Record<string, string> & { Authorization?: string };
   [key: string]: unknown;
@@ -36,9 +39,10 @@ interface AxiosResp {
   [key: string]: unknown;
 }
 
-// Request interceptor — attach token
+// ── Request interceptor — attach Bearer token ─────────────────────────────
 api.interceptors.request.use(
   (config: AxiosRequestCfg): AxiosRequestCfg => {
+    if (typeof window === "undefined") return config; // skip on server
     try {
       const raw = localStorage.getItem("academic_ai_token");
       if (raw) {
@@ -55,7 +59,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor — handle 401
+// ── Response interceptor — handle 401 ────────────────────────────────────
 api.interceptors.response.use(
   (res: AxiosResp): AxiosResp => res,
   (error: { response?: { status?: number } }): Promise<never> => {

@@ -22,7 +22,17 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
 
     # CORS
+    # ─────────────────────────────────────────────────────────────────────────
+    # Add your Vercel production URL and any preview URLs here.
+    # ALLOWED_ORIGINS can be overridden via the environment variable:
+    #   ALLOWED_ORIGINS=https://your-app.vercel.app,https://preview.vercel.app
     ALLOWED_ORIGINS: List[str] = [
+        # Production Vercel URL — override via env var in Render dashboard
+        "https://academic-intelligence-system.vercel.app",
+        # Vercel preview deployments (wildcard not supported by pydantic list,
+        # add specific preview URLs as needed or use ALLOWED_ORIGINS env var)
+        "https://academic-intelligence-system-git-main-nithin-58s-projects.vercel.app",
+        # Local development
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
@@ -82,6 +92,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # ignore unknown env vars (e.g. GEMINI_API_KEY, Render-injected vars)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
